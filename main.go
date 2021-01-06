@@ -3,12 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+
+	log "github.com/sirupsen/logrus"
+
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/doitintl/secrets-consumer-webhook/registry"
+	"github.com/doitintl/secrets-consumer-webhook/version"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -233,26 +237,6 @@ func (mw *mutatingWebhook) mutateContainers(containers []corev1.Container, podSp
 			}
 		}
 
-		if secretManagerConfig.aws.config.enabled {
-			container = secretManagerConfig.aws.mutateContainer(container)
-			mutationInProgress = true
-		}
-
-		if secretManagerConfig.gcp.config.enabled {
-			container = secretManagerConfig.gcp.mutateContainer(container)
-			mutationInProgress = true
-		}
-
-		if secretManagerConfig.vault.config.enabled {
-			container = secretManagerConfig.vault.mutateContainer(container)
-			mutationInProgress = true
-		}
-
-		if !mutationInProgress {
-			continue
-		}
-		mutated = true
-
 		args := container.Command
 
 		// the container has no explicitly specified command
@@ -275,6 +259,26 @@ func (mw *mutatingWebhook) mutateContainers(containers []corev1.Container, podSp
 
 		container.Command = []string{"/secrets-consumer/secrets-consumer-env"}
 		container.Args = args
+
+		if secretManagerConfig.aws.config.enabled {
+			container = secretManagerConfig.aws.mutateContainer(container)
+			mutationInProgress = true
+		}
+
+		if secretManagerConfig.gcp.config.enabled {
+			container = secretManagerConfig.gcp.mutateContainer(container)
+			mutationInProgress = true
+		}
+
+		if secretManagerConfig.vault.config.enabled {
+			container = secretManagerConfig.vault.mutateContainer(container)
+			mutationInProgress = true
+		}
+
+		if !mutationInProgress {
+			continue
+		}
+		mutated = true
 
 		// add the volume mount for secret-manager-env
 		container.VolumeMounts = append(container.VolumeMounts, []corev1.VolumeMount{
@@ -324,10 +328,33 @@ func (mw *mutatingWebhook) mutatePod(pod *corev1.Pod, secretManagerConfig secret
 	return nil
 }
 
-func parseSecretManagerConfig(obj metav1.Object) secretManagerConfig {
+func filterAndSortMapNumStr(m map[string]string, delimiter string) ([]string, error) {
+	keys := make([]string, 0, len(m))
+
+	for k := range m {
+		if strings.HasPrefix(k, delimiter) {
+			keys = append(keys, k)
+		}
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		numA, _ := strconv.Atoi(strings.Split(keys[i], delimiter)[1])
+		numB, _ := strconv.Atoi(strings.SplitAfter(keys[j], delimiter)[1])
+		return numA < numB
+	})
+
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("Sorting map failed! check delimiter is correct %+v", m)
+	}
+
+	return keys, nil
+}
+
+func (mw *mutatingWebhook) parseSecretManagerConfig(obj metav1.Object) secretManagerConfig {
 	var smCfg secretManagerConfig
 	annotations := obj.GetAnnotations()
 
+<<<<<<< HEAD
 	smCfg.aws.config.enabled, _ = strconv.ParseBool(annotations[AnnotationAWSSecretManagerEnabled])
 	smCfg.aws.config.region = annotations[AnnotaionAWSSecretManagerRegion]
 	smCfg.aws.config.roleARN = annotations[AnnotaionAWSSecretManagerRoleARN]
@@ -351,6 +378,42 @@ func parseSecretManagerConfig(obj metav1.Object) secretManagerConfig {
 	smCfg.vault.config.backend = annotations[AnnotaionVaultAuthPath]
 	smCfg.vault.config.useSecretNamesAsKeys, _ = strconv.ParseBool(annotations[AnnotaionVaultUseSecretNamesAsKeys])
 	smCfg.vault.config.version = annotations[AnnotaionVaultSecretVersion]
+=======
+	smCfg.aws.config.enabled, _ = strconv.ParseBool(annotations["aws.secret.manager/enabled"])
+	smCfg.aws.config.region = annotations["aws.secret.manager/region"]
+	smCfg.aws.config.roleARN = annotations["aws.secret.manager/role-arn"]
+	smCfg.aws.config.secretName = annotations["aws.secret.manager/secret-name"]
+	smCfg.aws.config.previousVersion = annotations["aws.secret.manager/previous-version"]
+
+	smCfg.gcp.config.enabled, _ = strconv.ParseBool(annotations["gcp.secret.manager/enabled"])
+	smCfg.gcp.config.projectID = annotations["gcp.secret.manager/project-id"]
+	smCfg.gcp.config.secretName = annotations["gcp.secret.manager/secret-name"]
+	smCfg.gcp.config.secretVersion = annotations["gcp.secret.manager/secret-version"]
+	smCfg.gcp.config.serviceAccountKeySecretName = annotations["gcp.secret.manager/gcp-service-account-key-secret-name"]
+
+	smCfg.vault.config.enabled, _ = strconv.ParseBool(annotations["vault.security/enabled"])
+	smCfg.vault.config.addr = annotations["vault.security/vault-addr"]
+	smCfg.vault.config.path = annotations["vault.security/vault-path"]
+	smCfg.vault.config.role = annotations["vault.security/vault-role"]
+	smCfg.vault.config.gcpServiceAccountKeySecretName = annotations["vault.secret.manager/gcp-service-account-key-secret-name"]
+	smCfg.vault.config.tlsSecretName = annotations["vault.security/vault-tls-secret-name"]
+	smCfg.vault.config.tokenPath = annotations["vault.security/k8s-token-path"]
+	smCfg.vault.config.backend = annotations["vault.security/vault-backend"]
+	smCfg.vault.config.kubernetesBackend = annotations["vault.security/k8s-backend-path"]
+	smCfg.vault.config.useSecretNamesAsKeys, _ = strconv.ParseBool(annotations["vault.security/vault-use-secret-names-as-keys"])
+	smCfg.vault.config.version = annotations["vault.security/vault-secret-version"]
+>>>>>>> feature/0.2.0
+
+	smCfg.vault.config.secretConfigs = []string{}
+	keys, err := filterAndSortMapNumStr(annotations, "vault.security/secret-config-")
+
+	if err != nil {
+		mw.logger.Warnf("sorting annotations of \"vault.security/secret-config-\" failed!")
+	}
+
+	for _, k := range keys {
+		smCfg.vault.config.secretConfigs = append(smCfg.vault.config.secretConfigs, annotations[k])
+	}
 
 	return smCfg
 }
@@ -358,7 +421,7 @@ func parseSecretManagerConfig(obj metav1.Object) secretManagerConfig {
 // SecretsMutator if object is Pod mutate pod specs
 // return a stop boolean to stop executing the chain and also an error.
 func (mw *mutatingWebhook) SecretsMutator(ctx context.Context, obj metav1.Object) (bool, error) {
-	smCfg := parseSecretManagerConfig(obj)
+	smCfg := mw.parseSecretManagerConfig(obj)
 
 	switch v := obj.(type) {
 	case *corev1.Pod:
@@ -396,8 +459,8 @@ func (mw *mutatingWebhook) SecretsMutator(ctx context.Context, obj metav1.Object
 			if smCfg.vault.config.addr == "" {
 				err = fmt.Errorf("Error getting vault address - make sure you set the annotation \"vault.security/enabled\" on the Pod")
 			}
-			if smCfg.vault.config.path == "" {
-				err = fmt.Errorf("Error getting vault path - make sure you set the annotation \"vault.security/vault-path\"")
+			if smCfg.vault.config.path == "" && len(smCfg.vault.config.secretConfigs) == 0 {
+				err = fmt.Errorf("Error getting vault path - make sure you either set the annotation \"vault.security/vault-path\" or use the annotation \"vault.security/secret-config-x\" where x is the secret number")
 			}
 			if smCfg.vault.config.role == "" {
 				err = fmt.Errorf("Error getting vault role - make sure you set the annotation \"vault.security/vault-role\"")
@@ -481,6 +544,7 @@ func main() {
 
 		logger = log.WithField("app", "secrets-consumer-webhook")
 	}
+	fmt.Printf("Secrets Consumer Webhook Version: %s Commit: %s\n\n", version.GetVersion(), version.GetGitCommitID())
 
 	k8sClient, err := newK8SClient()
 	if err != nil {
