@@ -328,28 +328,29 @@ func parseSecretManagerConfig(obj metav1.Object) secretManagerConfig {
 	var smCfg secretManagerConfig
 	annotations := obj.GetAnnotations()
 
-	smCfg.aws.config.enabled, _ = strconv.ParseBool(annotations["aws.secret.manager/enabled"])
-	smCfg.aws.config.region = annotations["aws.secret.manager/region"]
-	smCfg.aws.config.roleARN = annotations["aws.secret.manager/role-arn"]
-	smCfg.aws.config.secretName = annotations["aws.secret.manager/secret-name"]
-	smCfg.aws.config.previousVersion = annotations["aws.secret.manager/previous-version"]
+	smCfg.aws.config.enabled, _ = strconv.ParseBool(annotations[AnnotationAWSSecretManagerEnabled])
+	smCfg.aws.config.region = annotations[AnnotaionAWSSecretManagerRegion]
+	smCfg.aws.config.roleARN = annotations[AnnotaionAWSSecretManagerRoleARN]
+	smCfg.aws.config.secretName = annotations[AnnotaionAWSSecretManagerSecretName]
+	smCfg.aws.config.previousVersion = annotations[AnnotaionAWSSecretManagerPreviousVersion]
 
-	smCfg.gcp.config.enabled, _ = strconv.ParseBool(annotations["gcp.secret.manager/enabled"])
-	smCfg.gcp.config.projectID = annotations["gcp.secret.manager/project-id"]
-	smCfg.gcp.config.secretName = annotations["gcp.secret.manager/secret-name"]
-	smCfg.gcp.config.secretVersion = annotations["gcp.secret.manager/secret-version"]
-	smCfg.gcp.config.serviceAccountKeySecretName = annotations["gcp.secret.manager/gcp-service-account-key-secret-name"]
+	smCfg.gcp.config.enabled, _ = strconv.ParseBool(annotations[AnnotaionGCPSecretManagerEnabled])
+	smCfg.gcp.config.projectID = annotations[AnnotaionGCPSecretManagerProjectID]
+	smCfg.gcp.config.secretName = annotations[AnnotaionGCPSecretManagerSecretName]
+	smCfg.gcp.config.secretVersion = annotations[AnnotaionGCPSecretManagerSecretVersion]
+	smCfg.gcp.config.serviceAccountKeySecretName = annotations[AnnotaionGCPSecretManagerGCPServiceAccountKeySecretName]
 
-	smCfg.vault.config.enabled, _ = strconv.ParseBool(annotations["vault.security/enabled"])
-	smCfg.vault.config.addr = annotations["vault.security/vault-addr"]
-	smCfg.vault.config.path = annotations["vault.security/vault-path"]
-	smCfg.vault.config.role = annotations["vault.security/vault-role"]
-	smCfg.vault.config.gcpServiceAccountKeySecretName = annotations["vault.secret.manager/gcp-service-account-key-secret-name"]
-	smCfg.vault.config.tlsSecretName = annotations["vault.security/vault-tls-secret-name"]
-	smCfg.vault.config.tokenPath = annotations["vault.security/k8s-token-path"]
-	smCfg.vault.config.backend = annotations["vault.security/vault-backend"]
-	smCfg.vault.config.useSecretNamesAsKeys, _ = strconv.ParseBool(annotations["vault.security/vault-use-secret-names-as-keys"])
-	smCfg.vault.config.version = annotations["vault.security/vault-secret-version"]
+	smCfg.vault.config.enabled, _ = strconv.ParseBool(AnnotaionVaultEnabled)
+	smCfg.vault.config.addr = annotations[AnnotationVaultService]
+	smCfg.vault.config.path = annotations[AnnotaionVaultSecretPath]
+	smCfg.vault.config.role = annotations[AnnotationVaultRole]
+	smCfg.vault.config.gcpServiceAccountKeySecretName = annotations[AnnotaionVaultGCPServiceAccountKeySecretName]
+	smCfg.vault.config.tlsSecretName = annotations[AnnotationVaultTLSSecret]
+	smCfg.vault.config.vaultCACert = annotations[AnnotationVaultCACert]
+	smCfg.vault.config.tokenPath = annotations[AnnotaionVaultK8sTokenPath]
+	smCfg.vault.config.backend = annotations[AnnotaionVaultAuthPath]
+	smCfg.vault.config.useSecretNamesAsKeys, _ = strconv.ParseBool(annotations[AnnotaionVaultUseSecretNamesAsKeys])
+	smCfg.vault.config.version = annotations[AnnotaionVaultSecretVersion]
 
 	return smCfg
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -9,9 +11,12 @@ type vault struct {
 		enabled                        bool
 		addr                           string
 		tlsSecretName                  string
+		vaultCACert                    string
+		VaultCAKey                     string
 		path                           string
 		role                           string
 		tokenPath                      string
+		authPath                       string
 		backend                        string
 		useSecretNamesAsKeys           bool
 		gcpServiceAccountKeySecretName string
@@ -46,14 +51,14 @@ func (vault *vault) mutateContainer(container corev1.Container) corev1.Container
 		container.VolumeMounts = append(container.VolumeMounts, []corev1.VolumeMount{
 			{
 				Name:      "google-cloud-key",
-				MountPath: "/var/run/secret/cloud.google.com",
+				MountPath: VolumeMountGoogleCloudKeyPath,
 			},
 		}...)
 	}
 
 	if vault.config.tlsSecretName != "" {
-		mountPath := "/etc/tls/ca.pem"
-		volumeName := "vault-tls"
+		mountPath := fmt.Sprintf("%s/%s", VaultTLSMountPath, vault.config.vaultCACert)
+		volumeName := VaultTLSVolumeName
 
 		container.Env = append(container.Env, []corev1.EnvVar{
 			{
@@ -64,7 +69,7 @@ func (vault *vault) mutateContainer(container corev1.Container) corev1.Container
 		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 			Name:      volumeName,
 			MountPath: mountPath,
-			SubPath:   "ca.pem",
+			SubPath:   vault.config.vaultCACert,
 		})
 	} else {
 		container.Env = append(container.Env, []corev1.EnvVar{

@@ -13,7 +13,6 @@ type secretManagerConfig struct {
 	explicitSecrets bool // only get secrets that match the prefix `secret:`
 }
 
-// MutatingWebhook holds k8s client interface
 type mutatingWebhook struct {
 	k8sClient kubernetes.Interface
 	registry  registry.ImageRegistry
