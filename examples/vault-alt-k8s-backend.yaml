@@ -14,8 +14,10 @@ spec:
         vault.secret.manager/service: "http://vault.default.svc.cluster.local:8200"
         # vault.secret.manager/tls-secret: "vault-consul-ca"
         vault.secret.manager/role: "tester"
-        vault.secret.manager/path: "secrets/some/secrets/path"
-        vault.secret.manager/auth-path: "auth/kubernetes-alt/login"
+        vault.secret.manager/path: "secrets/dev/supserset-shell/"
+        vault.secret.manager/use-secret-names-as-keys: "true"
+        # vault.secret.manager/path: "secrets/some/secrets/path"
+        vault.secret.manager/auth-path: "auth/kubernetes/sandbox/us-west-2/login"
     spec:
       restartPolicy: Never
       serviceAccountName: tester

@@ -12,7 +12,6 @@ type vault struct {
 		addr                           string
 		tlsSecretName                  string
 		vaultCACert                    string
-		VaultCAKey                     string
 		path                           string
 		role                           string
 		tokenPath                      string

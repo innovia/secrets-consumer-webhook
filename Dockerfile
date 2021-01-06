@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.14
+ARG GO_VERSION=1.15
 
 FROM golang:${GO_VERSION}-alpine AS builder
 ARG VERSION
@@ -18,7 +18,7 @@ COPY go.* /build/
 RUN go mod download
 
 COPY . /build
-RUN go build -ldflags="-X github.com/doitintl/secrets-consumer-webhook/version.version=${VERSION} -X github.com/doitintl/secrets-consumer-webhook/version.gitCommitID=${COMMIT}"
+RUN go build -ldflags="-X github.com/innovia/secrets-consumer-webhook/version.version=${VERSION} -X github.com/innovia/secrets-consumer-webhook/version.gitCommitID=${COMMIT}"
 RUN cp secrets-consumer-webhook /usr/local/bin/
 RUN chmod a+x /usr/local/bin/secrets-consumer-webhook
 

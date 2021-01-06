@@ -1,8 +1,8 @@
 image:
-  tag: 0.2.0-r3
+  tag: 1.0.0
   pullPolicy: Always
 
 env:
   VAULT_IMAGE: vault:1.6.1
-  SECRETS_CONSUMER_ENV_IMAGE: doitintl/secrets-consumer-env:0.2.0-r2.2
+  SECRETS_CONSUMER_ENV_IMAGE: innovia/secrets-consumer-env:1.0.0
   # SECRETS_CONSUMER_ENV_IMAGE_PULL_POLICY: Always

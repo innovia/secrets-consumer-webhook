@@ -1,4 +1,4 @@
-module github.com/doitintl/secrets-consumer-webhook
+module github.com/innovia/secrets-consumer-webhook
 
 go 1.13
 

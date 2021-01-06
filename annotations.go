@@ -71,5 +71,7 @@ const (
 	// AnnotaionVaultSecretVersion get the specified secret version, default to latest version
 	AnnotaionVaultSecretVersion = "vault.secret.manager/secret-version"
 
-	AnnotationVaultMultiSecretPrefix = "vault.security/secret-config-"
+	// AnnotationVaultMultiSecretPrefix allow multi secret by order
+	// vault.secret.manager/secret-config-1: '{"Path": "secrets/v2/plain/secrets/path/app", "Version": "2", "use-secret-names-as-keys": "true"}'
+	AnnotationVaultMultiSecretPrefix = "vault.secret.manager/secret-config-"
 )

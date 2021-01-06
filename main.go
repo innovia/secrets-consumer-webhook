@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/doitintl/secrets-consumer-webhook/registry"
-	"github.com/doitintl/secrets-consumer-webhook/version"
+	"github.com/innovia/secrets-consumer-webhook/registry"
+	"github.com/innovia/secrets-consumer-webhook/version"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -328,6 +328,7 @@ func (mw *mutatingWebhook) mutatePod(pod *corev1.Pod, secretManagerConfig secret
 	return nil
 }
 
+// take all the annotations (m), filter the prefix(delemiter) "secret-config-" and sort them alpha-numeric
 func filterAndSortMapNumStr(m map[string]string, delimiter string) ([]string, error) {
 	keys := make([]string, 0, len(m))
 
@@ -337,14 +338,12 @@ func filterAndSortMapNumStr(m map[string]string, delimiter string) ([]string, er
 		}
 	}
 
-	sort.Slice(keys, func(i, j int) bool {
-		numA, _ := strconv.Atoi(strings.Split(keys[i], delimiter)[1])
-		numB, _ := strconv.Atoi(strings.SplitAfter(keys[j], delimiter)[1])
-		return numA < numB
-	})
-
-	if len(keys) == 0 {
-		return nil, fmt.Errorf("Sorting map failed! check delimiter is correct %+v", m)
+	if len(keys) > 0 {
+		sort.Slice(keys, func(i, j int) bool {
+			numA, _ := strconv.Atoi(strings.Split(keys[i], delimiter)[1])
+			numB, _ := strconv.Atoi(strings.SplitAfter(keys[j], delimiter)[1])
+			return numA < numB
+		})
 	}
 
 	return keys, nil
@@ -366,7 +365,7 @@ func (mw *mutatingWebhook) parseSecretManagerConfig(obj metav1.Object) secretMan
 	smCfg.gcp.config.secretVersion = annotations[AnnotaionGCPSecretManagerSecretVersion]
 	smCfg.gcp.config.serviceAccountKeySecretName = annotations[AnnotaionGCPSecretManagerGCPServiceAccountKeySecretName]
 
-	smCfg.vault.config.enabled, _ = strconv.ParseBool(AnnotaionVaultEnabled)
+	smCfg.vault.config.enabled, _ = strconv.ParseBool(annotations[AnnotaionVaultEnabled])
 	smCfg.vault.config.addr = annotations[AnnotationVaultService]
 	smCfg.vault.config.path = annotations[AnnotaionVaultSecretPath]
 	smCfg.vault.config.role = annotations[AnnotationVaultRole]
@@ -383,7 +382,7 @@ func (mw *mutatingWebhook) parseSecretManagerConfig(obj metav1.Object) secretMan
 	keys, err := filterAndSortMapNumStr(annotations, AnnotationVaultMultiSecretPrefix)
 
 	if err != nil {
-		mw.logger.Warnf("sorting annotations of %s failed!", AnnotationVaultMultiSecretPrefix)
+		mw.logger.Warnf("sorting annotations of %s failed! %+v", AnnotationVaultMultiSecretPrefix, err)
 	}
 
 	for _, k := range keys {
@@ -397,6 +396,7 @@ func (mw *mutatingWebhook) parseSecretManagerConfig(obj metav1.Object) secretMan
 // return a stop boolean to stop executing the chain and also an error.
 func (mw *mutatingWebhook) SecretsMutator(ctx context.Context, obj metav1.Object) (bool, error) {
 	smCfg := mw.parseSecretManagerConfig(obj)
+	mw.logger.Debugf("Secret Managers config: %#v", smCfg)
 
 	switch v := obj.(type) {
 	case *corev1.Pod:
@@ -492,7 +492,7 @@ func newK8SClient() (kubernetes.Interface, error) {
 }
 
 func init() {
-	viper.SetDefault("secrets_consumer_env_image", "doitintl/secrets-consumer-env:1.0.0")
+	viper.SetDefault("secrets_consumer_env_image", "innovia/secrets-consumer-env:1.0.0")
 	viper.SetDefault("secrets_consumer_env_image_pull_policy", string(corev1.PullIfNotPresent))
 	viper.SetDefault("tls_cert_file", "")
 	viper.SetDefault("tls_private_key_file", "")
@@ -519,7 +519,8 @@ func main() {
 
 		logger = log.WithField("app", "secrets-consumer-webhook")
 	}
-	fmt.Printf("Secrets Consumer Webhook Version: %s Commit: %s\n\n", version.GetVersion(), version.GetGitCommitID())
+	fmt.Printf("Secrets Consumer Webhook Version: %s Commit: %s", version.GetVersion(), version.GetGitCommitID())
+	fmt.Printf("Secrets Consumer Env Version: %s", viper.GetString("secrets_consumer_env_image"))
 
 	k8sClient, err := newK8SClient()
 	if err != nil {
