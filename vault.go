@@ -34,7 +34,7 @@ func (vault *vault) mutateContainer(container corev1.Container) corev1.Container
 	if vault.config.gcpServiceAccountKeySecretName != "" {
 		container.VolumeMounts = append(container.VolumeMounts, []corev1.VolumeMount{
 			{
-				Name:      "google-cloud-key",
+				Name:      VolumeMountGoogleCloudKeyName,
 				MountPath: VolumeMountGoogleCloudKeyPath,
 			},
 		}...)
@@ -75,7 +75,7 @@ func (vault *vault) setArgs(c corev1.Container) corev1.Container {
 	if vault.config.backend == "gcp" {
 		args = append(args, "--backend=gcp")
 		if vault.config.gcpServiceAccountKeySecretName != "" {
-			args = append(args, "--google-application-credentials=/var/run/secret/cloud.google.com/service-account.json")
+			args = append(args, fmt.Sprintf("--google-application-credentials=%s/%s", VolumeMountGoogleCloudKeyPath, GCPServiceAccountCredentialsFileName))
 		}
 	}
 

@@ -28,7 +28,7 @@ service:
   internalPort: 8443
 
 env:
-  VAULT_IMAGE: vault:1.4.0
+  VAULT_IMAGE: vault:1.6.1
   SECRETS_CONSUMER_ENV_IMAGE: doitintl/secrets-consumer-env:0.2.0
   # SECRETS_CONSUMER_ENV_IMAGE_PULL_POLICY: Always
   # VAULT_CAPATH: /vault/tls

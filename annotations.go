@@ -70,4 +70,6 @@ const (
 
 	// AnnotaionVaultSecretVersion get the specified secret version, default to latest version
 	AnnotaionVaultSecretVersion = "vault.secret.manager/secret-version"
+
+	AnnotationVaultMultiSecretPrefix = "vault.security/secret-config-"
 )

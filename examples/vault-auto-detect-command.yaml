@@ -10,12 +10,12 @@ spec:
     metadata:
       name:  vault-auto-detect-command
       annotations:
-        vault.security/enabled: "true"
-        vault.security/vault-addr: "https://vault.default.svc.cluster.local:8200"
-        vault.security/vault-role: "tester"
-        vault.security/vault-path: "secrets/v1/some/secrets/path"
-        vault.security/vault-tls-secret-name: "vault-consul-ca"
-        vault.security/vault-use-secret-names-as-keys: "true"
+        vvault.secret.manager/enabled: "true"
+        vvault.secret.manager/service: "https://vault.default.svc.cluster.local:8200"
+        vvault.secret.manager/role: "tester"
+        vvault.secret.manager/path: "secrets/v1/some/secrets/path"
+        vvault.secret.manager/tls-secret: "vault-consul-ca"
+        vvault.secret.manager/use-secret-names-as-keys: "true"
     spec:
       restartPolicy: Never
       serviceAccountName: tester

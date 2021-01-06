@@ -259,26 +259,26 @@ env:
 
 | Name| Description | Required | Default|
 | :--- |:---|:---:|:---|
-|"vault.security/enabled"| enable the Vault secret manager | - | false |
-|"vault.security/vault-addr" | Vault cluster service address | Yes | - |
-|"vault.security/vault-tls-secret-name" | Vault TLS secret name  | No | Latest |
-|"vault.security/vault-role" | Vault role to access the secret path  | Yes | - |
-|"vault.security/k8s-token-path" | alternate kubernetes service account token path  | No | `/var/run/secrets/kubernetes.io/serviceaccount/token` |
+|"vault.secret.manager/enabled"| enable the Vault secret manager | - | false |
+|"vault.secret.manager/service" | Vault cluster service address | Yes | - |
+|"vault.secret.manager/tls-secret" | Vault TLS secret name  | No | Latest |
+|"vault.secret.manager/role" | Vault role to access the secret path  | Yes | - |
+|"vault.secret.manager/k8s-token-path" | alternate kubernetes service account token path  | No | `/var/run/secrets/kubernetes.io/serviceaccount/token` |
 
 ### Single Secret Annotations
 
-|"vault.security/vault-path" | Vault secret path  | Yes | - |
-|"vault.security/vault-secret-version" | Vault secret version (if using v2 secret engine)  | Yes | - |
-|"vault.security/vault-use-secret-names-as-keys" | treat secret path ending with `/` as directory where secret name is the key and a single value in each  | No | - |
+|"vault.secret.manager/path" | Vault secret path  | Yes | - |
+|"vault.secret.manager/secret-version" | Vault secret version (if using v2 secret engine)  | Yes | - |
+|"vault.secret.manager/use-secret-names-as-keys" | treat secret path ending with `/` as directory where secret name is the key and a single value in each  | No | - |
 
 ### Multiple Secret Annotations
 
-|"vault.security/secret-config-x" | x is a numerical number for secret alpha-numeric ordering, JSON string format | Yes | - |
+|"vault.secret.manager/secret-config-x" | x is a numerical number for secret alpha-numeric ordering, JSON string format | Yes | - |
 
 #### JSON string format for secret-config:
 
 ```yaml
-vault.security/secret-config-1: '{"Path": "secrets/v2/plain/secrets/path/app", "Version": "2", "use-secret-names-as-keys": "true"}'
+vault.secret.manager/secret-config-1: '{"Path": "secrets/v2/plain/secrets/path/app", "Version": "2", "use-secret-names-as-keys": "true"}'
 ```
 
 Vault can be used with 2 backend authentications (GCP / Kubernetes)
@@ -289,8 +289,8 @@ Default authentication method, you can point it at another kubernetes backend pa
 
 | Name| Description | Required | Default|
 | :--- |:---|:---:|:---|
-|"vault.security/k8s-token-path" | alternate kubernetes service account token path  | No | `/var/run/secrets/kubernetes.io/serviceaccount/token` |
-|"vault.security/k8s-backend-path" | alternate kubernetes backend path  | No | `auth/kubernetes/login` |
+|"vault.secret.manager/k8s-token-path" | alternate kubernetes service account token path  | No | `/var/run/secrets/kubernetes.io/serviceaccount/token` |
+|"vault.secret.manager/auth-path" | alternate kubernetes backend auth path  | No | `auth/kubernetes/login` |
 
 ##### GCP Backend authentication
 
@@ -298,5 +298,5 @@ Use GCP service account to authenticate to Vault
 
 | Name| Description | Required | Default|
 | :--- |:---|:---:|:---|
-|"vault.security/gcp-service-account-key-secret-name" | GCP IAM service account secret name (file name **must be** `service-account.json`) to login with gcp  | No | Latest |
-|"vault.security/vault-tls-secret-name" | Vault TLS secret name  | No | Latest |
+|"vault.secret.manager/gcp-service-account-key-secret-name" | GCP IAM service account secret name (file name **must be** `service-account.json`) to login with gcp  | No | Latest |
+|"vault.secret.manager/tls-secret" | Vault TLS secret name  | No | Latest |

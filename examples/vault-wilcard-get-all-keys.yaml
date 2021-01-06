@@ -10,11 +10,11 @@ spec:
     metadata:
       name:  vault-wilcard-get-all-keys
       annotations:
-        vault.security/enabled: "true"
-        vault.security/vault-addr: "https://vault.default.svc.cluster.local:8200"
-        vault.security/vault-tls-secret-name: "vault-consul-ca"
-        vault.security/vault-role: "tester"
-        vault.security/vault-path: "secrets/v2/plain/secrets/db*"
+        vault.secret.manager/enabled: "true"
+        vault.secret.manager/service: "https://vault.default.svc.cluster.local:8200"
+        vault.secret.manager/tls-secret-name: "vault-consul-ca"
+        vault.secret.manager/role: "tester"
+        vault.secret.manager/path: "secrets/v2/plain/secrets/db*"
     spec:
       restartPolicy: Never
       serviceAccountName: tester

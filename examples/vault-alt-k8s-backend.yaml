@@ -10,12 +10,12 @@ spec:
     metadata:
       name:  vault-alt-k8s-backend
       annotations:
-        vault.security/enabled: "true"
-        vault.security/vault-addr: "https://vault.default.svc.cluster.local:8200"
-        vault.security/vault-tls-secret-name: "vault-consul-ca"
-        vault.security/vault-role: "tester"
-        vault.security/vault-path: "secrets/v1/some/secrets/path"
-        vault.security/k8s-backend-path: "auth/kubernetes-alt/login"
+        vault.secret.manager/enabled: "true"
+        vault.secret.manager/service: "http://vault.default.svc.cluster.local:8200"
+        # vault.secret.manager/tls-secret: "vault-consul-ca"
+        vault.secret.manager/role: "tester"
+        vault.secret.manager/path: "secrets/some/secrets/path"
+        vault.secret.manager/auth-path: "auth/kubernetes-alt/login"
     spec:
       restartPolicy: Never
       serviceAccountName: tester
@@ -34,9 +34,6 @@ spec:
               [ -n "$APP_USER" ] && echo "APP_USER: $APP_USER"
               [ -n "$DB_USER" ] && echo "DB_USER: $DB_USER"
               exit 0
-        env:
-        - name: API_KEY
-          value: vault:API_KEY
         resources:
             limits:
               cpu: 0.5m
