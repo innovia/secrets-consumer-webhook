@@ -112,7 +112,8 @@ func hasSecretPrefix(value string) bool {
 }
 
 func (mw *mutatingWebhook) getDataFromConfigmap(cmName string, ns string) (map[string]string, error) {
-	configMap, err := mw.k8sClient.CoreV1().ConfigMaps(ns).Get(cmName, metav1.GetOptions{})
+	ctx := context.Background()
+	configMap, err := mw.k8sClient.CoreV1().ConfigMaps(ns).Get(ctx, cmName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +121,8 @@ func (mw *mutatingWebhook) getDataFromConfigmap(cmName string, ns string) (map[s
 }
 
 func (mw *mutatingWebhook) getDataFromSecret(secretName string, ns string) (map[string][]byte, error) {
-	secret, err := mw.k8sClient.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
+	ctx := context.Background()
+	secret, err := mw.k8sClient.CoreV1().Secrets(ns).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -325,6 +327,11 @@ func (mw *mutatingWebhook) mutatePod(pod *corev1.Pod, secretManagerConfig secret
 		pod.Spec.Volumes = append(pod.Spec.Volumes, mw.getVolumes(pod.Spec.Volumes, secretManagerConfig)...)
 		mw.logger.Debugf("Successfully appended pod spec volumes")
 	}
+
+	if viper.GetString("secrets_consumer_env_image_pull_secret_name") != "" {
+		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: viper.GetString("secrets_consumer_env_image_pull_secret_name")})
+	}
+
 	return nil
 }
 
@@ -354,30 +361,29 @@ func (mw *mutatingWebhook) parseSecretManagerConfig(obj metav1.Object) secretMan
 	annotations := obj.GetAnnotations()
 
 	smCfg.aws.config.enabled, _ = strconv.ParseBool(annotations[AnnotationAWSSecretManagerEnabled])
-	smCfg.aws.config.region = annotations[AnnotaionAWSSecretManagerRegion]
-	smCfg.aws.config.roleARN = annotations[AnnotaionAWSSecretManagerRoleARN]
-	smCfg.aws.config.secretName = annotations[AnnotaionAWSSecretManagerSecretName]
-	smCfg.aws.config.previousVersion = annotations[AnnotaionAWSSecretManagerPreviousVersion]
+	smCfg.aws.config.region = annotations[AnnotationAWSSecretManagerRegion]
+	smCfg.aws.config.roleARN = annotations[AnnotationAWSSecretManagerRoleARN]
+	smCfg.aws.config.secretName = annotations[AnnotationAWSSecretManagerSecretName]
+	smCfg.aws.config.previousVersion = annotations[AnnotationAWSSecretManagerPreviousVersion]
 
-	smCfg.gcp.config.enabled, _ = strconv.ParseBool(annotations[AnnotaionGCPSecretManagerEnabled])
-	smCfg.gcp.config.projectID = annotations[AnnotaionGCPSecretManagerProjectID]
-	smCfg.gcp.config.secretName = annotations[AnnotaionGCPSecretManagerSecretName]
-	smCfg.gcp.config.secretVersion = annotations[AnnotaionGCPSecretManagerSecretVersion]
-	smCfg.gcp.config.serviceAccountKeySecretName = annotations[AnnotaionGCPSecretManagerGCPServiceAccountKeySecretName]
+	smCfg.gcp.config.enabled, _ = strconv.ParseBool(annotations[AnnotationGCPSecretManagerEnabled])
+	smCfg.gcp.config.projectID = annotations[AnnotationGCPSecretManagerProjectID]
+	smCfg.gcp.config.secretName = annotations[AnnotationGCPSecretManagerSecretName]
+	smCfg.gcp.config.secretVersion = annotations[AnnotationGCPSecretManagerSecretVersion]
+	smCfg.gcp.config.serviceAccountKeySecretName = annotations[AnnotationGCPSecretManagerGCPServiceAccountKeySecretName]
 
-	smCfg.vault.config.enabled, _ = strconv.ParseBool(annotations[AnnotaionVaultEnabled])
+	smCfg.vault.config.enabled, _ = strconv.ParseBool(annotations[AnnotationVaultEnabled])
 	smCfg.vault.config.addr = annotations[AnnotationVaultService]
-	smCfg.vault.config.path = annotations[AnnotaionVaultSecretPath]
+	smCfg.vault.config.path = annotations[AnnotationVaultSecretPath]
 	smCfg.vault.config.role = annotations[AnnotationVaultRole]
-	smCfg.vault.config.gcpServiceAccountKeySecretName = annotations[AnnotaionVaultGCPServiceAccountKeySecretName]
+	smCfg.vault.config.gcpServiceAccountKeySecretName = annotations[AnnotationVaultGCPServiceAccountKeySecretName]
 	smCfg.vault.config.tlsSecretName = annotations[AnnotationVaultTLSSecret]
 	smCfg.vault.config.vaultCACert = annotations[AnnotationVaultCACert]
-	smCfg.vault.config.tokenPath = annotations[AnnotaionVaultK8sTokenPath]
-	smCfg.vault.config.backend = annotations[AnnotaionVaultAuthPath]
-	smCfg.vault.config.useSecretNamesAsKeys, _ = strconv.ParseBool(annotations[AnnotaionVaultUseSecretNamesAsKeys])
-	smCfg.vault.config.version = annotations[AnnotaionVaultSecretVersion]
-	smCfg.vault.config.kubernetesBackend = annotations[AnnotaionVaultAuthPath]
-
+	smCfg.vault.config.tokenPath = annotations[AnnotationVaultK8sTokenPath]
+	smCfg.vault.config.backend = annotations[AnnotationVaultAuthPath]
+	smCfg.vault.config.useSecretNamesAsKeys, _ = strconv.ParseBool(annotations[AnnotationVaultUseSecretNamesAsKeys])
+	smCfg.vault.config.version = annotations[AnnotationVaultSecretVersion]
+	smCfg.vault.config.kubernetesBackend = annotations[AnnotationVaultAuthPath]
 	smCfg.vault.config.secretConfigs = []string{}
 	keys, err := filterAndSortMapNumStr(annotations, AnnotationVaultMultiSecretPrefix)
 
@@ -404,7 +410,7 @@ func (mw *mutatingWebhook) SecretsMutator(ctx context.Context, obj metav1.Object
 			mw.logger.Infof("Using AWS Secret Manager")
 
 			if smCfg.aws.config.secretName == "" {
-				return true, fmt.Errorf("Error getting aws secret name - make sure you set the annotation %s on the Pod", AnnotaionAWSSecretManagerSecretName)
+				return true, fmt.Errorf("Error getting aws secret name - make sure you set the annotation %s on the Pod", AnnotationAWSSecretManagerSecretName)
 			}
 
 			return false, mw.mutatePod(v, smCfg, whcontext.GetAdmissionRequest(ctx).Namespace, whcontext.IsAdmissionRequestDryRun(ctx))
@@ -415,10 +421,10 @@ func (mw *mutatingWebhook) SecretsMutator(ctx context.Context, obj metav1.Object
 			mw.logger.Infof("Using GCP Secret Manager")
 
 			if smCfg.gcp.config.projectID == "" {
-				err = fmt.Errorf("Error getting gcp project id - make sure you set the annotation %s on the Pod", AnnotaionGCPSecretManagerProjectID)
+				err = fmt.Errorf("Error getting gcp project id - make sure you set the annotation %s on the Pod", AnnotationGCPSecretManagerProjectID)
 			}
 			if smCfg.gcp.config.secretName == "" {
-				err = fmt.Errorf("Error getting gcp secret name - make sure you set the annotation %s on the Pod", AnnotaionGCPSecretManagerSecretName)
+				err = fmt.Errorf("Error getting gcp secret name - make sure you set the annotation %s on the Pod", AnnotationGCPSecretManagerSecretName)
 			}
 
 			if err != nil {
@@ -431,14 +437,21 @@ func (mw *mutatingWebhook) SecretsMutator(ctx context.Context, obj metav1.Object
 		if smCfg.vault.config.enabled {
 			var err error
 			mw.logger.Info("Using Vault Secret Manager")
+
 			if smCfg.vault.config.addr == "" {
-				err = fmt.Errorf("Error getting vault service address - make sure you set the annotation %s on the Pod", AnnotaionVaultEnabled)
+				err = fmt.Errorf("Error getting vault service address - make sure you set the annotation %s on the Pod", AnnotationVaultEnabled)
 			}
+
 			if smCfg.vault.config.path == "" && len(smCfg.vault.config.secretConfigs) == 0 {
-				err = fmt.Errorf("Error getting vault secret path - make sure you either set the annotation %s or use the annotation %s-x where x is the secret number", AnnotaionVaultSecretPath, AnnotationVaultMultiSecretPrefix)
+				err = fmt.Errorf("Error getting vault secret path - make sure you either set the annotation %s or use the annotation %s-x where x is the secret number", AnnotationVaultSecretPath, AnnotationVaultMultiSecretPrefix)
 			}
+
 			if smCfg.vault.config.role == "" {
 				err = fmt.Errorf("Error getting vault role - make sure you set the annotation %s", AnnotationVaultRole)
+			}
+
+			if smCfg.vault.config.tlsSecretName != "" && smCfg.vault.config.vaultCACert == "" {
+				err = fmt.Errorf("Error getting CA cert filename - make sure you set the annotation %s with the CA cert file name", AnnotationVaultCACert)
 			}
 
 			if err != nil {
@@ -494,6 +507,7 @@ func newK8SClient() (kubernetes.Interface, error) {
 func init() {
 	viper.SetDefault("secrets_consumer_env_image", "innovia/secrets-consumer-env:1.0.0")
 	viper.SetDefault("secrets_consumer_env_image_pull_policy", string(corev1.PullIfNotPresent))
+	viper.SetDefault("secrets_consumer_env_image_pull_secret_name", "")
 	viper.SetDefault("tls_cert_file", "")
 	viper.SetDefault("tls_private_key_file", "")
 	viper.SetDefault("listen_address", ":8443")
