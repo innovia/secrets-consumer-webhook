@@ -22,7 +22,7 @@ RUN go build -ldflags="-X github.com/innovia/secrets-consumer-webhook/version.ve
 RUN cp secrets-consumer-webhook /usr/local/bin/
 RUN chmod a+x /usr/local/bin/secrets-consumer-webhook
 
-FROM alpine
+FROM alpine:3.15
 
 RUN apk add --update libcap && rm -rf /var/cache/apk/*
 
