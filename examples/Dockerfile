@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:3.18.3
 
 ADD script.sh /usr/bin/
 
